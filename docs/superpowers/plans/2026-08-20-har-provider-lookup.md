@@ -25,6 +25,7 @@
 - `LICENSE` file (EUPL-1.2) at repo root — already copied from `soevereinscan`.
 - `README.md` must contain a dependency license table, kept in sync whenever a dependency is added/removed/changed.
 - No `Co-Authored-By` lines for any AI model in any commit message.
+- Supply-chain hygiene on our own dependency choices (not on scanned data): every dependency is exact-pinned with a committed lockfile (already covered above), CI runs `pip-audit` against the resolved lockfile on every push/PR and fails on any known vulnerability, and Dependabot is configured to open update PRs for the `uv`, `docker`, and `github-actions` ecosystems weekly.
 
 ---
 
@@ -1376,8 +1377,81 @@ git commit -m "Add readiness check against RIPEstat, Dockerfile and docker-compo
 
 ---
 
+### Task 9: Supply-chain scanning — CI dependency audit + Dependabot
+
+Added after user feedback: the concern is not scanning data users submit,
+it's making sure *we* don't introduce vulnerable software by pulling in
+compromised or outdated dependencies ourselves. `pip-audit` checks the
+resolved lockfile against known-vulnerability databases (OSV); Dependabot
+keeps dependencies from silently going stale.
+
+**Files:**
+- Create: `.github/workflows/ci.yml`
+- Create: `.github/dependabot.yml`
+
+- [ ] **Step 1: Write `.github/workflows/ci.yml`**
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.24"
+      - run: uv sync --group dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -v
+      - run: uvx pip-audit@2.10.1 --strict
+```
+
+- [ ] **Step 2: Write `.github/dependabot.yml`**
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+- [ ] **Step 3: Run the audit locally to confirm the current lockfile is clean**
+
+Run: `uvx pip-audit@2.10.1 --strict`
+Expected: exits 0, no known vulnerabilities in the resolved dependency
+set as scaffolded by Tasks 1-8. If it reports a finding, resolve it
+(upgrade the affected package, re-run `uv lock`) before committing —
+do not silence or skip a real finding here.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add .github/workflows/ci.yml .github/dependabot.yml
+git commit -m "Add CI dependency audit and Dependabot config"
+```
+
+---
+
 ## Self-Review Notes
 
-- **Spec coverage**: DNS→RIPEstat→PeeringDB pipeline (Tasks 3-6), `/lookup` with 200-hostname cap (Task 7), CORS-restricted-origin (Task 1/7), 7-day cache (Task 2/5), no MaxMind (confirmed absent throughout), stateless/no DB (confirmed — no persistence layer anywhere), `/healthz`+`/readyz` (Task 1/8), Dockerfile/12-factor (Task 8), README license table (Task 1/8), EUPL-1.2 LICENSE (present at repo root, copied before this plan). Not covered by this plan: CI/CD (publishing the Docker image to a registry) and the final Fly.io/Render hosting choice — both are listed as open points in the spec, deliberately deferred past this implementation plan.
+- **Spec coverage**: DNS→RIPEstat→PeeringDB pipeline (Tasks 3-6), `/lookup` with 200-hostname cap (Task 7), CORS-restricted-origin (Task 1/7), 7-day cache (Task 2/5), no MaxMind (confirmed absent throughout), stateless/no DB (confirmed — no persistence layer anywhere), `/healthz`+`/readyz` (Task 1/8), Dockerfile/12-factor (Task 8), README license table (Task 1/8), EUPL-1.2 LICENSE (present at repo root, copied before this plan), supply-chain dependency scanning (Task 9, added on user feedback after the initial spec/plan were written). Not covered by this plan: CI/CD publishing the Docker image to a registry, and the final Fly.io/Render hosting choice — both are listed as open points in the spec, deliberately deferred past this implementation plan.
 - **Type consistency**: `PeeringDBOrg` (Task 5) has fields `org_name`, `org_country` — matches usage in `lookup_orchestrator.py` (Task 6). `HostnameLookupResult` shape (`hostname`, `asn`, `org_name`, `org_country`) is consistent across Task 6's dict output, `LookupResult` schema (Task 7), and the route test's expected JSON.
 - **No placeholders**: the Dockerfile's digest is flagged explicitly as needing a real value at implementation time (Task 8, Step 5) rather than silently shipped as fake — this is the one deliberate exception to "no placeholders," called out because a real digest can't be known until the implementer pulls the image.
