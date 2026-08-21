@@ -7,7 +7,10 @@ function escapeHtml(value: string): string {
   return div.innerHTML;
 }
 
-export function renderResultsTable(container: HTMLElement, rows: ResultRow[]): void {
+export function renderResultsTable(
+  container: HTMLElement,
+  rows: ResultRow[],
+): void {
   const body = rows
     .map(
       (r) => `
@@ -17,7 +20,7 @@ export function renderResultsTable(container: HTMLElement, rows: ResultRow[]): v
           <td>${escapeHtml(r.orgCountry ?? "onbekend")}</td>
           <td>${isEuCountry(r.orgCountry) ? "✓ EU" : "buiten EU"}</td>
           <td>${r.count}</td>
-        </tr>`
+        </tr>`,
     )
     .join("");
 

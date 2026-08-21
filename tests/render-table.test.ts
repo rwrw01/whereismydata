@@ -13,7 +13,13 @@ describe("renderResultsTable", () => {
         orgName: "Microsoft Corporation",
         orgCountry: "IE",
       },
-      { hostname: "unknown.example", count: 1, asn: null, orgName: null, orgCountry: null },
+      {
+        hostname: "unknown.example",
+        count: 1,
+        asn: null,
+        orgName: null,
+        orgCountry: null,
+      },
     ];
 
     renderResultsTable(container, rows);
