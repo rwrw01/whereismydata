@@ -92,4 +92,34 @@ describe("lookupHostnames", () => {
       lookupHostnames("https://api.example.invalid", ["a.com"]),
     ).rejects.toThrow(LookupApiError);
   });
+
+  it("throws LookupApiError when the response body is not valid JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => {
+          throw new SyntaxError("Unexpected token in JSON");
+        },
+      }),
+    );
+
+    await expect(
+      lookupHostnames("https://api.example.invalid", ["a.com"]),
+    ).rejects.toThrow(LookupApiError);
+  });
+
+  it("throws LookupApiError when the response JSON has no results array", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ notResults: [] }),
+      }),
+    );
+
+    await expect(
+      lookupHostnames("https://api.example.invalid", ["a.com"]),
+    ).rejects.toThrow(LookupApiError);
+  });
 });

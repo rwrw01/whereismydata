@@ -46,7 +46,21 @@ async function lookupBatch(
     );
   }
 
-  const data = (await response.json()) as ApiLookupResponse;
+  let data: ApiLookupResponse;
+  try {
+    data = (await response.json()) as ApiLookupResponse;
+  } catch {
+    throw new LookupApiError(
+      "Lookup-service gaf een onverwacht antwoord terug.",
+    );
+  }
+
+  if (!Array.isArray(data.results)) {
+    throw new LookupApiError(
+      "Lookup-service gaf een onverwacht antwoord terug.",
+    );
+  }
+
   return data.results.map((r) => ({
     hostname: r.hostname,
     asn: r.asn,
