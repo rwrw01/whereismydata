@@ -6,6 +6,9 @@ services:
     environment:
       ALLOWED_ORIGIN: "http://localhost:5173"
       PORT: "8080"
+    read_only: true
+    tmpfs:
+      - /tmp
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8080/healthz', timeout=3).raise_for_status()"]
       interval: 10s
