@@ -35,7 +35,10 @@ uv run ruff format --check .
 
 ### `POST /lookup`
 
-Request: `{"hostnames": ["example.com", "cdn.example.com"]}` (1-200 hostnames)
+Request: `{"hostnames": ["example.com", "cdn.example.com"]}` (1-200 hostnames;
+each 1-253 characters, `A-Z a-z 0-9 . _ -` only — anything else is rejected
+with a 422). Duplicate hostnames are looked up once and the result is repeated
+in the response, so the response always has one entry per input entry.
 
 Response:
 ```json
@@ -67,7 +70,7 @@ All configuration is via environment variables (see `.env.example`):
 | `ALLOWED_ORIGIN` | `http://localhost:5173` | CORS origin allowed to call this API |
 | `PEERINGDB_API_KEY` | (empty) | Optional — raises PeeringDB rate limits |
 | `REDIS_URL` | (empty) | Optional — if unset, caching is in-memory per process |
-| `PORT` | `8080` | Listen port |
+| `PORT` | `8080` | Listen port (the container binds `$PORT`; PaaS platforms such as Fly.io and Render inject it) |
 
 ## License
 
@@ -81,7 +84,7 @@ EUPL-1.2 — see [LICENSE](LICENSE).
 | uvicorn | BSD-3-Clause |
 | httpx | BSD-3-Clause |
 | pydantic-settings | MIT |
-| redis (optional, only if `REDIS_URL` is set) | MIT |
+| redis | MIT |
 | pytest (dev) | MIT |
 | pytest-asyncio (dev) | Apache-2.0 |
 | respx (dev) | BSD-3-Clause |
