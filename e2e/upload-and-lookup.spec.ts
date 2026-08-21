@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 const dirtyHarPath = fileURLToPath(
-  new URL("../tests/fixtures/dirty-sample.har", import.meta.url)
+  new URL("../tests/fixtures/dirty-sample.har", import.meta.url),
 );
 
 test("uploading a HAR file shows a results table with leverancier and zetel", async ({
@@ -14,9 +14,12 @@ test("uploading a HAR file shows a results table with leverancier and zetel", as
   const fileInput = page.locator("#file-input");
   await fileInput.setInputFiles(path.resolve(dirtyHarPath));
 
-  await expect(page.locator("#status")).toContainText("hostnamen geanalyseerd", {
-    timeout: 15_000,
-  });
+  await expect(page.locator("#status")).toContainText(
+    "hostnamen geanalyseerd",
+    {
+      timeout: 15_000,
+    },
+  );
 
   const table = page.locator(".results-table");
   await expect(table).toBeVisible();
@@ -35,10 +38,14 @@ test("rejects a file that is not valid JSON", async ({ page }) => {
   await page.evaluate(() => {
     const input = document.querySelector<HTMLInputElement>("#file-input");
     const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(new File(["not json"], "broken.har", { type: "application/json" }));
+    dataTransfer.items.add(
+      new File(["not json"], "broken.har", { type: "application/json" }),
+    );
     if (input) input.files = dataTransfer.files;
     input?.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
-  await expect(page.locator("#status")).toContainText("Kon HAR-bestand niet lezen");
+  await expect(page.locator("#status")).toContainText(
+    "Kon HAR-bestand niet lezen",
+  );
 });
