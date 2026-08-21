@@ -54,7 +54,9 @@ async def lookup(
             headers={"Retry-After": str(exc.retry_after_seconds)},
         ) from exc
 
-    ripestat = RipeStatClient(http_client, settings.ripestat_base_url, cache)
+    ripestat = RipeStatClient(
+        http_client, settings.ripestat_base_url, settings.ripestat_country_base_url, cache
+    )
     peeringdb = PeeringDBClient(
         http_client, settings.peeringdb_base_url, settings.peeringdb_api_key, cache
     )

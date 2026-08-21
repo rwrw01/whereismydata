@@ -81,7 +81,13 @@ Response:
 ```json
 {
   "results": [
-    {"hostname": "example.com", "asn": 15133, "org_name": "Edgecast Inc", "org_country": "US"}
+    {
+      "hostname": "example.com",
+      "asn": 15133,
+      "org_name": "Edgecast Inc",
+      "org_country": "US",
+      "org_country_source": "peeringdb"
+    }
   ]
 }
 ```
@@ -89,6 +95,17 @@ Response:
 A hostname that can't be resolved, or whose ASN/organisation isn't known
 to RIPEstat/PeeringDB, is returned with `null` fields rather than causing
 the whole request to fail.
+
+`org_country` normally comes from PeeringDB's own organisation profile
+(`org_country_source: "peeringdb"`). PeeringDB profiles are self-reported
+and many large networks (Microsoft, Amazon, ...) leave the address/country
+field blank despite having a populated ASN/org name. When that happens,
+`org_country` falls back to the ASN's RIR registration country via
+RIPEstat (`org_country_source: "ripestat"`) — a related but coarser fact
+(which registry region the ASN was allocated in, not necessarily the
+org's legal seat), reported with its source rather than presented as if
+it came from PeeringDB. If neither source has a country, both fields are
+`null`.
 
 Rate limited per client IP (read from `X-Forwarded-For`, falling back to
 the direct peer): `RATE_LIMIT_PER_HOUR` requests per rolling hour window.

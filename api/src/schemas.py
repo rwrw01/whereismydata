@@ -20,6 +20,7 @@ class LookupResult(BaseModel):
     asn: int | None
     org_name: str | None
     org_country: str | None
+    org_country_source: str | None
 
 
 class LookupResponse(BaseModel):

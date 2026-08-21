@@ -56,6 +56,7 @@ const handleFile = async (file: File): Promise<void> => {
         asn: lookup?.asn ?? null,
         orgName: lookup?.orgName ?? null,
         orgCountry: lookup?.orgCountry ?? null,
+        orgCountrySource: lookup?.orgCountrySource ?? null,
       };
     });
 

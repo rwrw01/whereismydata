@@ -12,6 +12,7 @@ describe("renderResultsTable", () => {
         asn: 8075,
         orgName: "Microsoft Corporation",
         orgCountry: "IE",
+        orgCountrySource: "peeringdb",
       },
       {
         hostname: "unknown.example",
@@ -19,6 +20,7 @@ describe("renderResultsTable", () => {
         asn: null,
         orgName: null,
         orgCountry: null,
+        orgCountrySource: null,
       },
     ];
 
@@ -42,6 +44,7 @@ describe("renderResultsTable", () => {
         asn: 1,
         orgName: "<script>alert(1)</script>",
         orgCountry: "US",
+        orgCountrySource: "peeringdb",
       },
     ];
 
@@ -50,5 +53,42 @@ describe("renderResultsTable", () => {
     expect(container.innerHTML).not.toContain("<script>alert(1)</script>");
     expect(container.querySelector("script")).toBeNull();
     expect(container.textContent).toContain("<script>alert(1)</script>");
+  });
+
+  it("marks a RIPEstat-sourced country with a (RIPE) annotation", () => {
+    const container = document.createElement("div");
+    const rows: ResultRow[] = [
+      {
+        hostname: "bluedolphin.app",
+        count: 1,
+        asn: 8075,
+        orgName: "Microsoft",
+        orgCountry: "US",
+        orgCountrySource: "ripestat",
+      },
+    ];
+
+    renderResultsTable(container, rows);
+
+    expect(container.textContent).toContain("US (RIPE)");
+  });
+
+  it("does not annotate a PeeringDB-sourced country", () => {
+    const container = document.createElement("div");
+    const rows: ResultRow[] = [
+      {
+        hostname: "example.com",
+        count: 1,
+        asn: 15169,
+        orgName: "Google LLC",
+        orgCountry: "US",
+        orgCountrySource: "peeringdb",
+      },
+    ];
+
+    renderResultsTable(container, rows);
+
+    expect(container.textContent).toContain("US");
+    expect(container.textContent).not.toContain("(RIPE)");
   });
 });

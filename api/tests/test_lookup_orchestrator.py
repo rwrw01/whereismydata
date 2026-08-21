@@ -24,6 +24,61 @@ async def test_lookup_hostnames_happy_path(monkeypatch):
             "asn": 15133,
             "org_name": "Edgecast Inc",
             "org_country": "US",
+            "org_country_source": "peeringdb",
+        }
+    ]
+    ripestat.get_registration_country.assert_not_called()
+
+
+async def test_lookup_hostnames_falls_back_to_ripestat_when_peeringdb_country_is_blank(
+    monkeypatch,
+):
+    import src.service.lookup_orchestrator as orch
+
+    monkeypatch.setattr(orch, "resolve_hostname", AsyncMock(return_value=["20.1.2.3"]))
+
+    ripestat = AsyncMock()
+    ripestat.get_asn.return_value = 8075
+    ripestat.get_registration_country.return_value = "US"
+
+    peeringdb = AsyncMock()
+    peeringdb.lookup.return_value = PeeringDBOrg(org_name="Microsoft", org_country=None)
+
+    results = await lookup_hostnames(["bluedolphin.app"], ripestat, peeringdb)
+
+    assert results == [
+        {
+            "hostname": "bluedolphin.app",
+            "asn": 8075,
+            "org_name": "Microsoft",
+            "org_country": "US",
+            "org_country_source": "ripestat",
+        }
+    ]
+    ripestat.get_registration_country.assert_called_once_with(8075)
+
+
+async def test_lookup_hostnames_leaves_country_null_when_both_sources_have_none(monkeypatch):
+    import src.service.lookup_orchestrator as orch
+
+    monkeypatch.setattr(orch, "resolve_hostname", AsyncMock(return_value=["20.1.2.3"]))
+
+    ripestat = AsyncMock()
+    ripestat.get_asn.return_value = 99999999
+    ripestat.get_registration_country.return_value = None
+
+    peeringdb = AsyncMock()
+    peeringdb.lookup.return_value = PeeringDBOrg(org_name="Some Org", org_country=None)
+
+    results = await lookup_hostnames(["example.com"], ripestat, peeringdb)
+
+    assert results == [
+        {
+            "hostname": "example.com",
+            "asn": 99999999,
+            "org_name": "Some Org",
+            "org_country": None,
+            "org_country_source": None,
         }
     ]
 
@@ -39,7 +94,13 @@ async def test_lookup_hostnames_dns_failure_gives_unknown_result(monkeypatch):
     results = await lookup_hostnames(["does-not-exist.invalid"], ripestat, peeringdb)
 
     assert results == [
-        {"hostname": "does-not-exist.invalid", "asn": None, "org_name": None, "org_country": None}
+        {
+            "hostname": "does-not-exist.invalid",
+            "asn": None,
+            "org_name": None,
+            "org_country": None,
+            "org_country_source": None,
+        }
     ]
     ripestat.get_asn.assert_not_called()
     peeringdb.lookup.assert_not_called()
@@ -86,18 +147,21 @@ async def test_lookup_hostnames_survives_unexpected_exception(monkeypatch):
             "asn": 15133,
             "org_name": "Edgecast Inc",
             "org_country": "US",
+            "org_country_source": "peeringdb",
         },
         {
             "hostname": "boom.example.com",
             "asn": None,
             "org_name": None,
             "org_country": None,
+            "org_country_source": None,
         },
         {
             "hostname": "also-ok.example.com",
             "asn": 15133,
             "org_name": "Edgecast Inc",
             "org_country": "US",
+            "org_country_source": "peeringdb",
         },
     ]
 
@@ -111,7 +175,15 @@ async def test_lookup_hostnames_handles_oversized_label_without_raising():
     bad = "a" * 64 + ".example.com"
     results = await lookup_hostnames([bad], ripestat, peeringdb)
 
-    assert results == [{"hostname": bad, "asn": None, "org_name": None, "org_country": None}]
+    assert results == [
+        {
+            "hostname": bad,
+            "asn": None,
+            "org_name": None,
+            "org_country": None,
+            "org_country_source": None,
+        }
+    ]
     ripestat.get_asn.assert_not_called()
 
 

@@ -16,6 +16,7 @@ describe("lookupHostnames", () => {
             asn: 15169,
             org_name: "Google LLC",
             org_country: "US",
+            org_country_source: "peeringdb",
           },
         ],
       }),
@@ -32,6 +33,7 @@ describe("lookupHostnames", () => {
         asn: 15169,
         orgName: "Google LLC",
         orgCountry: "US",
+        orgCountrySource: "peeringdb",
       },
     ]);
     expect(fetchMock).toHaveBeenCalledWith(

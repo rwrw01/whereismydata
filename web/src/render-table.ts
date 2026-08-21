@@ -7,6 +7,12 @@ function escapeHtml(value: string): string {
   return div.innerHTML;
 }
 
+function formatCountry(row: ResultRow): string {
+  if (!row.orgCountry) return "onbekend";
+  const country = escapeHtml(row.orgCountry);
+  return row.orgCountrySource === "ripestat" ? `${country} (RIPE)` : country;
+}
+
 export function renderResultsTable(
   container: HTMLElement,
   rows: ResultRow[],
@@ -17,7 +23,7 @@ export function renderResultsTable(
         <tr>
           <td>${escapeHtml(r.hostname)}</td>
           <td>${escapeHtml(r.orgName ?? "onbekend")}</td>
-          <td>${escapeHtml(r.orgCountry ?? "onbekend")}</td>
+          <td>${formatCountry(r)}</td>
           <td>${isEuCountry(r.orgCountry) ? "✓ EU" : "buiten EU"}</td>
           <td>${r.count}</td>
         </tr>`,

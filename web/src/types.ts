@@ -18,6 +18,7 @@ export interface LookupResult {
   asn: number | null;
   orgName: string | null;
   orgCountry: string | null;
+  orgCountrySource: string | null;
 }
 
 export interface ResultRow {
@@ -26,4 +27,5 @@ export interface ResultRow {
   asn: number | null;
   orgName: string | null;
   orgCountry: string | null;
+  orgCountrySource: string | null;
 }

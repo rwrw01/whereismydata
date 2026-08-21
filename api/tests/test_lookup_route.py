@@ -50,7 +50,13 @@ async def test_lookup_returns_results_for_each_hostname(client):
     assert response.status_code == 200
     body = response.json()
     assert body["results"] == [
-        {"hostname": "example.com", "asn": 15133, "org_name": "Edgecast Inc", "org_country": "US"}
+        {
+            "hostname": "example.com",
+            "asn": 15133,
+            "org_name": "Edgecast Inc",
+            "org_country": "US",
+            "org_country_source": "peeringdb",
+        }
     ]
 
 

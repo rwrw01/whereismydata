@@ -11,7 +11,13 @@ MAX_CONCURRENT_LOOKUPS = 10
 
 
 def _unknown(hostname: str) -> dict:
-    return {"hostname": hostname, "asn": None, "org_name": None, "org_country": None}
+    return {
+        "hostname": hostname,
+        "asn": None,
+        "org_name": None,
+        "org_country": None,
+        "org_country_source": None,
+    }
 
 
 async def _lookup_one(hostname: str, ripestat: RipeStatClient, peeringdb: PeeringDBClient) -> dict:
@@ -24,11 +30,27 @@ async def _lookup_one(hostname: str, ripestat: RipeStatClient, peeringdb: Peerin
         return _unknown(hostname)
 
     org = await peeringdb.lookup(asn)
+    org_name = org.org_name if org else None
+    org_country = org.org_country if org else None
+    org_country_source = "peeringdb" if org_country else None
+
+    # PeeringDB org profiles are self-reported and frequently leave the
+    # country field blank even for well-known networks (Microsoft, Amazon).
+    # Fall back to the ASN's RIR registration country in that case — a
+    # different, coarser fact (which registry region the ASN was allocated
+    # in, not necessarily the org's legal seat), so the source is reported
+    # alongside it rather than silently presented as if it were PeeringDB's.
+    if org_country is None:
+        org_country = await ripestat.get_registration_country(asn)
+        if org_country is not None:
+            org_country_source = "ripestat"
+
     return {
         "hostname": hostname,
         "asn": asn,
-        "org_name": org.org_name if org else None,
-        "org_country": org.org_country if org else None,
+        "org_name": org_name,
+        "org_country": org_country,
+        "org_country_source": org_country_source,
     }
 
 

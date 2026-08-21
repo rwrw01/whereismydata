@@ -9,6 +9,7 @@ interface ApiLookupResult {
   asn: number | null;
   org_name: string | null;
   org_country: string | null;
+  org_country_source: string | null;
 }
 
 interface ApiLookupResponse {
@@ -72,6 +73,7 @@ async function lookupBatch(
     asn: r.asn,
     orgName: r.org_name,
     orgCountry: r.org_country,
+    orgCountrySource: r.org_country_source,
   }));
 }
 

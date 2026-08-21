@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     port: int = 8080
     rate_limit_per_hour: int = 100
     ripestat_base_url: str = "https://stat.ripe.net/data/network-info/data.json"
+    ripestat_country_base_url: str = "https://stat.ripe.net/data/rir-stats-country/data.json"
     peeringdb_base_url: str = "https://www.peeringdb.com/api"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
