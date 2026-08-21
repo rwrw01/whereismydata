@@ -1,11 +1,15 @@
 version: 2
 updates:
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
   - package-ecosystem: "uv"
-    directory: "/"
+    directory: "/api"
     schedule:
       interval: "weekly"
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/api"
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions"

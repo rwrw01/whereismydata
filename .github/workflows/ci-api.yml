@@ -1,9 +1,19 @@
-name: CI
+name: CI (api)
 
 on:
   push:
     branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/ci-api.yml"
   pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/ci-api.yml"
+
+defaults:
+  run:
+    working-directory: api
 
 jobs:
   test:

@@ -5,9 +5,9 @@ owner (leverancier) and that owner's statutory country of registration
 (statutaire zetel), sourced from RIPEstat and PeeringDB. No database, no
 persisted results, no MaxMind/GeoIP dependency.
 
-Built to serve [har-scan-web](../har-scan-web), a client-side HAR-file
-analyzer: har-scan-web sanitizes an uploaded HAR file in the browser down
-to a bare hostname list, and this service enriches that list.
+Built to serve [web](../web), a client-side HAR-file analyzer: it
+sanitizes an uploaded HAR file in the browser down to a bare hostname
+list, and this service enriches that list.
 
 ## Running locally
 
