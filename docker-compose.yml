@@ -6,6 +6,7 @@ services:
     environment:
       ALLOWED_ORIGIN: "${ALLOWED_ORIGIN:-http://localhost:5173}"
       PORT: "8080"
+      RATE_LIMIT_PER_HOUR: "${RATE_LIMIT_PER_HOUR:-10}"
     read_only: true
     tmpfs:
       - /tmp

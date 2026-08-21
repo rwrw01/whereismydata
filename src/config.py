@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     peeringdb_api_key: str = ""
     redis_url: str | None = None
     port: int = 8080
+    rate_limit_per_hour: int = 10
     ripestat_base_url: str = "https://stat.ripe.net/data/network-info/data.json"
     peeringdb_base_url: str = "https://www.peeringdb.com/api"
 

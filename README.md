@@ -53,6 +53,11 @@ A hostname that can't be resolved, or whose ASN/organisation isn't known
 to RIPEstat/PeeringDB, is returned with `null` fields rather than causing
 the whole request to fail.
 
+Rate limited per client IP (read from `X-Forwarded-For`, falling back to
+the direct peer): `RATE_LIMIT_PER_HOUR` requests per rolling hour window.
+Exceeding it returns `429 Too Many Requests` with a `Retry-After` header
+(seconds until the window resets).
+
 ### `GET /healthz`
 
 Liveness probe. Always 200 if the process is running.
@@ -71,6 +76,7 @@ All configuration is via environment variables (see `.env.example`):
 | `PEERINGDB_API_KEY` | (empty) | Optional — raises PeeringDB rate limits |
 | `REDIS_URL` | (empty) | Optional — if unset, caching is in-memory per process |
 | `PORT` | `8080` | Listen port (the container binds `$PORT`; PaaS platforms such as Fly.io and Render inject it) |
+| `RATE_LIMIT_PER_HOUR` | `10` | Max `/lookup` requests per client IP per rolling hour |
 
 ## License
 
