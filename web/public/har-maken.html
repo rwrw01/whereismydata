@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Een HAR-bestand maken</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #1a1a1a;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin-top: 2rem;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.25rem;
+      }
+      ol {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin-bottom: 0.4rem;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      .terug {
+        display: inline-block;
+        margin-top: 2rem;
+      }
+      .waarschuwing {
+        background: #fef3c7;
+        border-left: 4px solid #d97706;
+        padding: 0.75rem 1rem;
+        margin: 1.5rem 0;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Een HAR-bestand maken</h1>
+    <p>
+      Een HAR-bestand (<em>HTTP Archive</em>) is een export van alle
+      netwerkverkeer dat je browser maakt tijdens het bezoeken van een
+      pagina. Je maakt 'm via de ingebouwde ontwikkelaarstools van je
+      browser — geen extra software nodig.
+    </p>
+
+    <div class="waarschuwing">
+      Een HAR-bestand kan gevoelige gegevens bevatten (cookies,
+      tokens, sessie-informatie). Deze tool leest lokaal in je browser
+      alleen de hostnamen eruit voordat er iets verstuurd wordt — het
+      ruwe bestand verlaat nooit je computer. Deel het bestand zelf
+      dus niet zomaar met anderen.
+    </div>
+
+    <h2>Chrome</h2>
+    <ol>
+      <li>Open de pagina die je wilt analyseren.</li>
+      <li>
+        Open de ontwikkelaarstools: <code>F12</code> of
+        <code>Ctrl+Shift+I</code> (Windows/Linux) /
+        <code>Cmd+Option+I</code> (Mac).
+      </li>
+      <li>Ga naar het tabblad <strong>Network</strong> (Netwerk).</li>
+      <li>
+        Zorg dat de opnameknop actief is (rood bolletje linksboven in het
+        paneel) en vink <strong>Preserve log</strong> aan als je ook
+        verkeer over paginanavigaties heen wilt vastleggen.
+      </li>
+      <li>Herlaad de pagina of voer de handeling uit die je wilt vastleggen.</li>
+      <li>
+        Klik met de rechtermuisknop ergens in de requestlijst →
+        <strong>Save all as HAR with content</strong>.
+      </li>
+    </ol>
+
+    <h2>Edge</h2>
+    <p>
+      Edge is gebaseerd op dezelfde engine als Chrome, dus de stappen zijn
+      identiek:
+    </p>
+    <ol>
+      <li>Open de pagina die je wilt analyseren.</li>
+      <li>
+        Open de ontwikkelaarstools: <code>F12</code> of
+        <code>Ctrl+Shift+I</code>.
+      </li>
+      <li>Ga naar het tabblad <strong>Network</strong> (Netwerk).</li>
+      <li>
+        Zorg dat de opnameknop actief is en vink
+        <strong>Preserve log</strong> aan indien gewenst.
+      </li>
+      <li>Herlaad de pagina of voer de handeling uit die je wilt vastleggen.</li>
+      <li>
+        Klik met de rechtermuisknop in de requestlijst →
+        <strong>Export HTTP Archive with Content</strong> (of
+        <strong>Save all as HAR with content</strong>, afhankelijk van de
+        Edge-versie).
+      </li>
+    </ol>
+
+    <h2>Firefox</h2>
+    <ol>
+      <li>Open de pagina die je wilt analyseren.</li>
+      <li>Open de ontwikkelaarstools: <code>F12</code>.</li>
+      <li>Ga naar het tabblad <strong>Netwerkanalyse</strong> (Network).</li>
+      <li>
+        Vink het tandwiel-icoon → <strong>Persist Logs</strong> aan als je
+        verkeer over paginanavigaties heen wilt vastleggen.
+      </li>
+      <li>Herlaad de pagina of voer de handeling uit die je wilt vastleggen.</li>
+      <li>
+        Klik met de rechtermuisknop ergens in de requestlijst →
+        <strong>Alles opslaan als HAR</strong> (Save All As HAR).
+      </li>
+    </ol>
+
+    <a class="terug" href="/">← Terug naar de tool</a>
+  </body>
+</html>
