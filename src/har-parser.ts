@@ -20,10 +20,20 @@ interface HarFile {
   };
 }
 
+// Mirrors the hostname validation the lookup backend enforces. Keeping the
+// stricter side of the contract on the client stops a single unsupported
+// hostname (e.g. a bracketed IPv6 literal such as "[::1]", which is a valid
+// URL hostname but is rejected by the backend with a 422) from failing the
+// whole batched lookup request. IPv4 literals like "192.168.1.5" still match.
+const HOSTNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
+
 function extractHostname(url: string): string | null {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    if (!HOSTNAME_PATTERN.test(parsed.hostname)) {
       return null;
     }
     return parsed.hostname || null;

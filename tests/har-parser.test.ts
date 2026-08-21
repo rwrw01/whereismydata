@@ -126,6 +126,28 @@ describe("parseHar", () => {
     expect(result.edges).toEqual([]);
   });
 
+  it("skips a bracketed IPv6-literal hostname the lookup backend would reject", () => {
+    const har = JSON.stringify({
+      log: {
+        entries: [{ request: { url: "http://[::1]:3000/api", headers: [] } }],
+      },
+    });
+    const result = parseHar(har);
+    expect(result.hostnames).toEqual([]);
+  });
+
+  it("still allows a plain IPv4-literal hostname", () => {
+    const har = JSON.stringify({
+      log: {
+        entries: [
+          { request: { url: "http://192.168.1.5:8080/api", headers: [] } },
+        ],
+      },
+    });
+    const result = parseHar(har);
+    expect(result.hostnames).toEqual([{ host: "192.168.1.5", count: 1 }]);
+  });
+
   it("does not surface a chrome-extension:// URL as a hostname", () => {
     const har = JSON.stringify({
       log: {
