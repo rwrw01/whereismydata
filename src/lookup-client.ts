@@ -40,6 +40,12 @@ async function lookupBatch(
     );
   }
 
+  if (response.status === 429) {
+    throw new LookupApiError(
+      "Te veel scans vanaf dit IP-adres, probeer het later opnieuw.",
+    );
+  }
+
   if (!response.ok) {
     throw new LookupApiError(
       `Lookup-service gaf een fout terug (status ${response.status}).`,

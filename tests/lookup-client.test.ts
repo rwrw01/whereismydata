@@ -69,6 +69,23 @@ describe("lookupHostnames", () => {
     expect(secondBody.hostnames).toHaveLength(50);
   });
 
+  it("throws a specific Dutch message on a 429 rate-limit response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: async () => ({}),
+      }),
+    );
+
+    await expect(
+      lookupHostnames("https://api.example.invalid", ["a.com"]),
+    ).rejects.toThrow(
+      "Te veel scans vanaf dit IP-adres, probeer het later opnieuw.",
+    );
+  });
+
   it("throws LookupApiError on a non-ok response", async () => {
     vi.stubGlobal(
       "fetch",
