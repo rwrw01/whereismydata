@@ -6,7 +6,8 @@ owner (leverancier) and that owner's statutory country of registration
 persisted results, no MaxMind/GeoIP dependency.
 
 Built to serve [har-scan-web](../har-scan-web), a client-side HAR-file
-analyzer.
+analyzer: har-scan-web sanitizes an uploaded HAR file in the browser down
+to a bare hostname list, and this service enriches that list.
 
 ## Running locally
 
@@ -16,23 +17,57 @@ cp .env.example .env
 uv run uvicorn src.main:app --reload --port 8080
 ```
 
+Or via Docker:
+
+```bash
+docker compose up
+```
+
 ## Testing
 
 ```bash
 uv run pytest -v
+uv run ruff check .
+uv run ruff format --check .
 ```
 
 ## API
 
 ### `POST /lookup`
 
-Request: `{"hostnames": ["example.com", "cdn.example.com"]}` (max 200 hostnames)
+Request: `{"hostnames": ["example.com", "cdn.example.com"]}` (1-200 hostnames)
 
-Response: `{"results": [{"hostname": "example.com", "asn": 15169, "org_name": "Google LLC", "org_country": "US"}]}`
+Response:
+```json
+{
+  "results": [
+    {"hostname": "example.com", "asn": 15133, "org_name": "Edgecast Inc", "org_country": "US"}
+  ]
+}
+```
 
-### `GET /healthz` / `GET /readyz`
+A hostname that can't be resolved, or whose ASN/organisation isn't known
+to RIPEstat/PeeringDB, is returned with `null` fields rather than causing
+the whole request to fail.
 
-Liveness / readiness probes.
+### `GET /healthz`
+
+Liveness probe. Always 200 if the process is running.
+
+### `GET /readyz`
+
+Readiness probe. 200 if RIPEstat is reachable, 503 otherwise.
+
+## Configuration
+
+All configuration is via environment variables (see `.env.example`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ALLOWED_ORIGIN` | `http://localhost:5173` | CORS origin allowed to call this API |
+| `PEERINGDB_API_KEY` | (empty) | Optional — raises PeeringDB rate limits |
+| `REDIS_URL` | (empty) | Optional — if unset, caching is in-memory per process |
+| `PORT` | `8080` | Listen port |
 
 ## License
 
@@ -46,6 +81,7 @@ EUPL-1.2 — see [LICENSE](LICENSE).
 | uvicorn | BSD-3-Clause |
 | httpx | BSD-3-Clause |
 | pydantic-settings | MIT |
+| redis (optional, only if `REDIS_URL` is set) | MIT |
 | pytest (dev) | MIT |
 | pytest-asyncio (dev) | Apache-2.0 |
 | respx (dev) | BSD-3-Clause |
