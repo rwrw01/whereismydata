@@ -58,15 +58,25 @@ class PeeringDBClient:
             logger.warning("PeeringDB /net returned %d for ASN %d", net_response.status_code, asn)
             raise PeeringDBTransientError(f"status {net_response.status_code}")
 
+        # Defensive shape checks: a syntactically valid JSON body is no guarantee
+        # of the documented structure (e.g. /net returning a bare JSON array).
+        # A wrong shape is transient/unexpected, not a confirmed "ASN unknown".
         try:
-            net_data = net_response.json().get("data", [])
-        except ValueError as e:
+            net_body = net_response.json()
+            if not isinstance(net_body, dict):
+                raise PeeringDBTransientError(f"non-object /net response for ASN {asn}")
+            net_data = net_body.get("data", [])
+            if not isinstance(net_data, list):
+                raise PeeringDBTransientError(f"non-list /net data for ASN {asn}")
+        except (ValueError, TypeError, KeyError) as e:
             raise PeeringDBTransientError(f"malformed /net response for ASN {asn}") from e
 
         if not net_data:
             return None
 
         entry = net_data[0]
+        if not isinstance(entry, dict):
+            raise PeeringDBTransientError(f"non-object /net entry for ASN {asn}")
         org_name = entry.get("name")
         org_id = entry.get("org_id")
 
@@ -77,10 +87,11 @@ class PeeringDBClient:
                     f"{self._base_url}/org/{org_id}", headers=self._headers
                 )
                 if org_response.status_code == 200:
-                    org_rows = org_response.json().get("data", [])
-                    if org_rows:
+                    org_body = org_response.json()
+                    org_rows = org_body.get("data", []) if isinstance(org_body, dict) else []
+                    if isinstance(org_rows, list) and org_rows and isinstance(org_rows[0], dict):
                         org_country = org_rows[0].get("country") or None
-            except (httpx.HTTPError, ValueError):
+            except (httpx.HTTPError, ValueError, TypeError, KeyError):
                 logger.warning(
                     "PeeringDB /org lookup failed for org %d, degrading to org_name only", org_id
                 )

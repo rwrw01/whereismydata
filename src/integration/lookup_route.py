@@ -26,9 +26,16 @@ async def lookup(
     cache: TTLCache = Depends(get_cache),
     settings: Settings = Depends(get_settings),
 ) -> LookupResponse:
-    ripestat = RipeStatClient(http_client, settings.ripestat_base_url)
+    ripestat = RipeStatClient(http_client, settings.ripestat_base_url, cache)
     peeringdb = PeeringDBClient(
         http_client, settings.peeringdb_base_url, settings.peeringdb_api_key, cache
     )
-    results = await lookup_hostnames(body.hostnames, ripestat, peeringdb)
-    return LookupResponse(results=results)
+
+    # Deduplicate before doing any work: a batch of 200 duplicates must not cause
+    # 200 real DNS/RIPEstat/PeeringDB round-trips. Results are mapped back onto the
+    # original list afterwards so the caller still gets one result per input entry.
+    unique_hostnames = list(dict.fromkeys(body.hostnames))
+    results = await lookup_hostnames(unique_hostnames, ripestat, peeringdb)
+    by_hostname = {result["hostname"]: result for result in results}
+
+    return LookupResponse(results=[by_hostname[hostname] for hostname in body.hostnames])

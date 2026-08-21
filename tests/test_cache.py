@@ -1,5 +1,3 @@
-import pytest
-
 from src.service.cache import TTLCache
 
 
