@@ -39,6 +39,10 @@ npm run build
 Output in `dist/`, gepubliceerd naar GitHub Pages via
 `.github/workflows/deploy-pages.yml` bij elke push naar `main`.
 
+Afhankelijk van de hostingkeuze moet `VITE_BASE` in die workflow worden gezet:
+laat hem ongezet bij een custom domain (base blijft `/`), en zet hem op
+`/<repo-naam>/` bij een GitHub Pages project-site (`<org>.github.io/<repo>`).
+
 ## License
 
 EUPL-1.2 — zie [LICENSE](LICENSE).
