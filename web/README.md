@@ -7,7 +7,19 @@ bestand ooit in ruwe vorm je browser verlaat.
 Sanitizing gebeurt volledig lokaal: alleen hostnamen (en hoe vaak ze
 worden aangeroepen) worden naar de lookup-backend ([api](../api))
 gestuurd. Cookies, auth-headers, request/response-bodies en query
-strings worden nooit gelezen buiten het moment van hostname-extractie.
+strings worden nooit gelezen buiten het moment van hostname-extractie —
+met twee gerichte uitzonderingen, beide puur lokaal, nooit verstuurd:
+
+- **Aantal Set-Cookie-headers per hostname** (alleen de headernaam wordt
+  gecontroleerd, nooit de cookiewaarde zelf).
+- **Browserextensie-ID's** (`chrome-extension://`/`moz-extension://`)
+  worden apart getoond, nooit naar de lookup-backend gestuurd — een
+  extensie-ID heeft toch geen zinnige PeeringDB/RIPEstat-match.
+
+Daarnaast toont de pagina de referer-gebaseerde aanroepvolgorde (bijv. om
+te zien dat een authenticatie-redirect vóór de doel-webapp kwam) en
+markeert hostnamen die overeenkomen met bekende tracking-domeinpatronen
+(puur op basis van de al-geëxtraheerde hostname, geen extra HAR-velden).
 
 ## Ontwikkelen
 

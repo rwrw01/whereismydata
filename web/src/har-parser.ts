@@ -12,6 +12,9 @@ interface HarEntry {
     url?: string;
     headers?: HarHeader[];
   };
+  response?: {
+    headers?: HarHeader[];
+  };
 }
 
 interface HarFile {
@@ -19,6 +22,14 @@ interface HarFile {
     entries?: HarEntry[];
   };
 }
+
+// The whitelist this file enforces: request.url and the Referer request
+// header VALUE (both reduced immediately to a hostname), plus — as of the
+// cookie-count feature — response header NAMES only. A header's presence
+// (e.g. "was there a Set-Cookie header at all") is not the same class of
+// data as its value; counting occurrences of the name "set-cookie" never
+// reads what was actually set. No other field (request/response bodies,
+// query strings, timings, any other header's value) is ever read.
 
 // Mirrors the hostname validation the lookup backend enforces. Keeping the
 // stricter side of the contract on the client stops a single unsupported
@@ -52,6 +63,34 @@ function extractRefererHostname(entry: HarEntry): string | null {
   return extractHostname(referer.value);
 }
 
+const EXTENSION_PROTOCOLS = new Set(["chrome-extension:", "moz-extension:"]);
+
+// Browser-extension requests are never sent to the lookup backend (an
+// extension ID has no ASN/PeeringDB entry, and treating it as a hostname
+// would leak the visitor's specific installed extension). They are
+// collected separately, for local-only display.
+function extractExtensionId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!EXTENSION_PROTOCOLS.has(parsed.protocol)) return null;
+    return parsed.hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+// Counts Set-Cookie response headers by NAME only — never reads a header's
+// value. A response can carry multiple Set-Cookie headers (one per cookie);
+// this returns how many, so callers can show "N cookies set" without ever
+// knowing which cookies or what they contained.
+function countSetCookieHeaders(entry: HarEntry): number {
+  const headers = entry.response?.headers;
+  if (!Array.isArray(headers)) return 0;
+  return headers.filter(
+    (h) => typeof h?.name === "string" && h.name.toLowerCase() === "set-cookie",
+  ).length;
+}
+
 export function parseHar(rawText: string): ParsedHar {
   let data: HarFile;
   try {
@@ -68,15 +107,28 @@ export function parseHar(rawText: string): ParsedHar {
   }
 
   const counts = new Map<string, number>();
+  const cookieCounts = new Map<string, number>();
   const edgeKeys = new Set<string>();
   const edges: HostnameEdge[] = [];
+  const extensions = new Set<string>();
 
   for (const entry of entries) {
     try {
-      const host = extractHostname(entry.request?.url ?? "");
+      const url = entry.request?.url ?? "";
+      const extensionId = extractExtensionId(url);
+      if (extensionId) {
+        extensions.add(extensionId);
+        continue;
+      }
+
+      const host = extractHostname(url);
       if (!host) continue;
 
       counts.set(host, (counts.get(host) ?? 0) + 1);
+      cookieCounts.set(
+        host,
+        (cookieCounts.get(host) ?? 0) + countSetCookieHeaders(entry),
+      );
 
       const refererHost = extractRefererHostname(entry);
       if (refererHost && refererHost !== host) {
@@ -94,7 +146,8 @@ export function parseHar(rawText: string): ParsedHar {
   const hostnames = Array.from(counts.entries()).map(([host, count]) => ({
     host,
     count,
+    cookieCount: cookieCounts.get(host) ?? 0,
   }));
 
-  return { hostnames, edges };
+  return { hostnames, edges, extensions: Array.from(extensions) };
 }

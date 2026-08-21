@@ -1,4 +1,6 @@
+import { renderExtensionsList } from "./extensions-list";
 import { InvalidHarError, parseHar } from "./har-parser";
+import { renderHostnameTree } from "./hostname-tree";
 import { LookupApiError, lookupHostnames } from "./lookup-client";
 import { renderResultsTable } from "./render-table";
 import "./style.css";
@@ -53,6 +55,7 @@ const handleFile = async (file: File): Promise<void> => {
       return {
         hostname: h.host,
         count: h.count,
+        cookieCount: h.cookieCount,
         asn: lookup?.asn ?? null,
         orgName: lookup?.orgName ?? null,
         orgCountry: lookup?.orgCountry ?? null,
@@ -61,7 +64,21 @@ const handleFile = async (file: File): Promise<void> => {
     });
 
     setStatus(`${rows.length} hostnamen geanalyseerd.`);
-    renderResultsTable(resultsEl, rows);
+
+    const tableSection = document.createElement("div");
+    renderResultsTable(tableSection, rows);
+
+    const treeSection = document.createElement("div");
+    renderHostnameTree(
+      treeSection,
+      parsed.edges,
+      parsed.hostnames.map((h) => h.host),
+    );
+
+    const extensionsSection = document.createElement("div");
+    renderExtensionsList(extensionsSection, parsed.extensions);
+
+    resultsEl.append(tableSection, treeSection, extensionsSection);
   } catch (error) {
     if (error instanceof InvalidHarError || error instanceof LookupApiError) {
       setStatus(error.message);

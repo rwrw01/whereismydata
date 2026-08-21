@@ -31,3 +31,23 @@ body {
   padding: 0.5rem;
   border-bottom: 1px solid #ddd;
 }
+
+.tracker-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+}
+
+.hostname-tree,
+.extensions-list {
+  margin-top: 0.5rem;
+}
+
+.hostname-tree ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}

@@ -10,12 +10,12 @@ const dirtyHarPath = fileURLToPath(
 const dirtyHarText = readFileSync(dirtyHarPath, "utf-8");
 
 describe("parseHar", () => {
-  it("extracts hostnames with request counts", () => {
+  it("extracts hostnames with request counts and cookie counts", () => {
     const result = parseHar(dirtyHarText);
     expect(result.hostnames).toEqual(
       expect.arrayContaining([
-        { host: "app.example.com", count: 1 },
-        { host: "cdn.example.com", count: 2 },
+        { host: "app.example.com", count: 1, cookieCount: 1 },
+        { host: "cdn.example.com", count: 2, cookieCount: 0 },
       ]),
     );
     expect(result.hostnames).toHaveLength(2);
@@ -28,15 +28,24 @@ describe("parseHar", () => {
     ]);
   });
 
+  it("collects browser-extension IDs separately from hostnames", () => {
+    const result = parseHar(dirtyHarText);
+    expect(result.extensions).toEqual(["kjfhgabcdefghijklmnopqrstuvwxyz12"]);
+  });
+
   it("never leaks cookies, auth headers, tokens, emails or query strings into the parsed result", () => {
     const result = parseHar(dirtyHarText);
 
-    // Structural backstop: the return value must have exactly these two
+    // Structural backstop: the return value must have exactly these three
     // keys, no matter what fields a future change might start reading off
     // a HAR entry. This catches a whole class of leak that a substring
     // search below would miss (e.g. a new field added under an existing
     // key name).
-    expect(Object.keys(result).sort()).toEqual(["edges", "hostnames"]);
+    expect(Object.keys(result).sort()).toEqual([
+      "edges",
+      "extensions",
+      "hostnames",
+    ]);
 
     const serialized = JSON.stringify(result);
 
@@ -58,6 +67,9 @@ describe("parseHar", () => {
       "POSTDATA_SECRET",
       "RESPONSE_COOKIE_SECRET",
       "1.2.3.4",
+      // The Set-Cookie header's own value (only its presence/name may ever
+      // be read — never this).
+      "HttpOnly",
     ];
     for (const secret of secrets) {
       expect(serialized).not.toContain(secret);
@@ -107,7 +119,9 @@ describe("parseHar", () => {
       },
     });
     const result = parseHar(har);
-    expect(result.hostnames).toEqual([{ host: "example.com", count: 1 }]);
+    expect(result.hostnames).toEqual([
+      { host: "example.com", count: 1, cookieCount: 0 },
+    ]);
     expect(result.edges).toEqual([]);
   });
 
@@ -122,7 +136,9 @@ describe("parseHar", () => {
       },
     });
     const result = parseHar(har);
-    expect(result.hostnames).toEqual([{ host: "example.com", count: 1 }]);
+    expect(result.hostnames).toEqual([
+      { host: "example.com", count: 1, cookieCount: 0 },
+    ]);
     expect(result.edges).toEqual([]);
   });
 
@@ -145,10 +161,12 @@ describe("parseHar", () => {
       },
     });
     const result = parseHar(har);
-    expect(result.hostnames).toEqual([{ host: "192.168.1.5", count: 1 }]);
+    expect(result.hostnames).toEqual([
+      { host: "192.168.1.5", count: 1, cookieCount: 0 },
+    ]);
   });
 
-  it("does not surface a chrome-extension:// URL as a hostname", () => {
+  it("collects a chrome-extension:// URL into extensions, not hostnames", () => {
     const har = JSON.stringify({
       log: {
         entries: [
@@ -163,5 +181,54 @@ describe("parseHar", () => {
     });
     const result = parseHar(har);
     expect(result.hostnames).toEqual([]);
+    expect(result.extensions).toEqual(["kjfhgabcdefghijklmnopqrstuvwxyz12"]);
+  });
+
+  it("deduplicates repeated extension IDs", () => {
+    const har = JSON.stringify({
+      log: {
+        entries: [
+          { request: { url: "chrome-extension://abc123/a.js", headers: [] } },
+          { request: { url: "chrome-extension://abc123/b.js", headers: [] } },
+        ],
+      },
+    });
+    const result = parseHar(har);
+    expect(result.extensions).toEqual(["abc123"]);
+  });
+
+  it("counts multiple Set-Cookie response headers on one entry", () => {
+    const har = JSON.stringify({
+      log: {
+        entries: [
+          {
+            request: { url: "https://example.com/", headers: [] },
+            response: {
+              headers: [
+                { name: "Set-Cookie", value: "a=1" },
+                { name: "set-cookie", value: "b=2" },
+                { name: "Content-Type", value: "text/html" },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const result = parseHar(har);
+    expect(result.hostnames).toEqual([
+      { host: "example.com", count: 1, cookieCount: 2 },
+    ]);
+  });
+
+  it("treats a missing response object as zero cookies instead of throwing", () => {
+    const har = JSON.stringify({
+      log: {
+        entries: [{ request: { url: "https://example.com/", headers: [] } }],
+      },
+    });
+    const result = parseHar(har);
+    expect(result.hostnames).toEqual([
+      { host: "example.com", count: 1, cookieCount: 0 },
+    ]);
   });
 });

@@ -1,6 +1,7 @@
 export interface HostnameCount {
   host: string;
   count: number;
+  cookieCount: number;
 }
 
 export interface HostnameEdge {
@@ -11,6 +12,7 @@ export interface HostnameEdge {
 export interface ParsedHar {
   hostnames: HostnameCount[];
   edges: HostnameEdge[];
+  extensions: string[];
 }
 
 export interface LookupResult {
@@ -24,6 +26,7 @@ export interface LookupResult {
 export interface ResultRow {
   hostname: string;
   count: number;
+  cookieCount: number;
   asn: number | null;
   orgName: string | null;
   orgCountry: string | null;

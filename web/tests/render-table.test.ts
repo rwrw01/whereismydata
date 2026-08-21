@@ -3,12 +3,13 @@ import { renderResultsTable } from "../src/render-table";
 import type { ResultRow } from "../src/types";
 
 describe("renderResultsTable", () => {
-  it("renders one row per result with hostname, org, country, EU badge and count", () => {
+  it("renders one row per result with hostname, org, country, EU badge, count and cookies", () => {
     const container = document.createElement("div");
     const rows: ResultRow[] = [
       {
         hostname: "cdn.bluedolphin.app",
         count: 8,
+        cookieCount: 2,
         asn: 8075,
         orgName: "Microsoft Corporation",
         orgCountry: "IE",
@@ -17,6 +18,7 @@ describe("renderResultsTable", () => {
       {
         hostname: "unknown.example",
         count: 1,
+        cookieCount: 0,
         asn: null,
         orgName: null,
         orgCountry: null,
@@ -33,6 +35,7 @@ describe("renderResultsTable", () => {
     expect(container.textContent).toContain("onbekend");
     expect(container.textContent).toContain("buiten EU");
     expect(container.textContent).toContain("8");
+    expect(container.textContent).toContain("2");
   });
 
   it("escapes HTML in organisation names to prevent XSS", () => {
@@ -41,6 +44,7 @@ describe("renderResultsTable", () => {
       {
         hostname: "evil.example",
         count: 1,
+        cookieCount: 0,
         asn: 1,
         orgName: "<script>alert(1)</script>",
         orgCountry: "US",
@@ -61,6 +65,7 @@ describe("renderResultsTable", () => {
       {
         hostname: "bluedolphin.app",
         count: 1,
+        cookieCount: 0,
         asn: 8075,
         orgName: "Microsoft",
         orgCountry: "US",
@@ -79,6 +84,7 @@ describe("renderResultsTable", () => {
       {
         hostname: "example.com",
         count: 1,
+        cookieCount: 0,
         asn: 15169,
         orgName: "Google LLC",
         orgCountry: "US",
@@ -90,5 +96,65 @@ describe("renderResultsTable", () => {
 
     expect(container.textContent).toContain("US");
     expect(container.textContent).not.toContain("(RIPE)");
+  });
+
+  it("shows a dash for zero cookies and the count otherwise", () => {
+    const container = document.createElement("div");
+    const rows: ResultRow[] = [
+      {
+        hostname: "no-cookies.example",
+        count: 1,
+        cookieCount: 0,
+        asn: null,
+        orgName: null,
+        orgCountry: null,
+        orgCountrySource: null,
+      },
+      {
+        hostname: "sets-cookies.example",
+        count: 1,
+        cookieCount: 3,
+        asn: null,
+        orgName: null,
+        orgCountry: null,
+        orgCountrySource: null,
+      },
+    ];
+
+    renderResultsTable(container, rows);
+
+    const cells = Array.from(container.querySelectorAll("tbody tr")).map(
+      (tr) => tr.querySelector("td:last-child")?.textContent,
+    );
+    expect(cells).toEqual(["-", "3"]);
+  });
+
+  it("marks a hostname matching a known tracker pattern with a badge", () => {
+    const container = document.createElement("div");
+    const rows: ResultRow[] = [
+      {
+        hostname: "stats.g.doubleclick.net",
+        count: 1,
+        cookieCount: 0,
+        asn: null,
+        orgName: null,
+        orgCountry: null,
+        orgCountrySource: null,
+      },
+      {
+        hostname: "bluedolphin.app",
+        count: 1,
+        cookieCount: 0,
+        asn: null,
+        orgName: null,
+        orgCountry: null,
+        orgCountrySource: null,
+      },
+    ];
+
+    renderResultsTable(container, rows);
+
+    expect(container.querySelectorAll(".tracker-badge")).toHaveLength(1);
+    expect(container.textContent).toContain("stats.g.doubleclick.net");
   });
 });
