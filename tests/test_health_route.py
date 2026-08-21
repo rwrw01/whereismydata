@@ -24,3 +24,10 @@ async def test_readyz_returns_503_when_ripestat_unreachable(client):
     respx.get(RIPESTAT_URL).mock(side_effect=httpx.ConnectError("connection refused"))
     response = await client.get("/readyz")
     assert response.status_code == 503
+
+
+@respx.mock
+async def test_readyz_returns_503_when_ripestat_returns_5xx(client):
+    respx.get(RIPESTAT_URL).mock(return_value=httpx.Response(500))
+    response = await client.get("/readyz")
+    assert response.status_code == 503
