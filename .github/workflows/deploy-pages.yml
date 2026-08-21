@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm audit --audit-level=high
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_LOOKUP_API_URL: ${{ vars.LOOKUP_API_URL }}
+          # If this deploys to a GitHub Pages *project* site
+          # (https://<org>.github.io/<repo>/), also set:
+          #   VITE_BASE: /<repo-name>/
+          # Leave it unset for a custom domain — unset means base "/", which is
+          # what the app defaults to in vite.config.ts.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <title>HAR Provider Scan</title>
+  </head>
+  <body>
+    <main>
+      <h1>HAR Provider Scan</h1>
+      <p>
+        Upload een HAR-bestand (geëxporteerd via de netwerktab van je
+        browser devtools) om te zien welke leveranciers en landen erachter
+        schuilgaan. Het bestand wordt lokaal in je browser verwerkt en
+        verlaat nooit je computer in ruwe vorm — alleen hostnamen worden
+        naar de lookup-service verstuurd.
+      </p>
+      <div id="drop-zone">
+        <p>Sleep een .har-bestand hierheen, of kies een bestand:</p>
+        <input id="file-input" type="file" accept=".har,application/json" />
+      </div>
+      <p id="status"></p>
+      <div id="results"></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
