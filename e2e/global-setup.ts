@@ -7,5 +7,6 @@ const COMPOSE_PATH =
 export default function globalSetup(): void {
   execSync(`docker compose -f ${COMPOSE_PATH} up -d --build --wait`, {
     stdio: "inherit",
+    env: { ...process.env, ALLOWED_ORIGIN: "http://localhost:4173" },
   });
 }
