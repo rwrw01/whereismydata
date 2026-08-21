@@ -15,6 +15,12 @@ class PeeringDBOrg:
     org_country: str | None
 
 
+class PeeringDBTransientError(Exception):
+    """Raised internally when a PeeringDB call fails transiently (network/HTTP/parse
+    error) — signals lookup() to skip caching, so the next request retries instead
+    of caching a false negative for 7 days."""
+
+
 class PeeringDBClient:
     """Looks up the organisation (leverancier) and statutory country
     (statutaire zetel) registered in PeeringDB for a given ASN."""
@@ -31,7 +37,12 @@ class PeeringDBClient:
         if cached is not None:
             return PeeringDBOrg(**json.loads(cached)) if cached != "null" else None
 
-        org = await self._fetch(asn)
+        try:
+            org = await self._fetch(asn)
+        except PeeringDBTransientError:
+            logger.warning("PeeringDB lookup transiently failed for ASN %d, not caching", asn)
+            return None
+
         await self._cache.set(cache_key, json.dumps(asdict(org)) if org else "null")
         return org
 
@@ -40,20 +51,28 @@ class PeeringDBClient:
             net_response = await self._client.get(
                 f"{self._base_url}/net", params={"asn": asn}, headers=self._headers
             )
-            if net_response.status_code != 200:
-                logger.warning("PeeringDB /net returned %d for ASN %d", net_response.status_code, asn)
-                return None
+        except httpx.HTTPError as e:
+            raise PeeringDBTransientError(f"network error fetching /net for ASN {asn}") from e
 
+        if net_response.status_code != 200:
+            logger.warning("PeeringDB /net returned %d for ASN %d", net_response.status_code, asn)
+            raise PeeringDBTransientError(f"status {net_response.status_code}")
+
+        try:
             net_data = net_response.json().get("data", [])
-            if not net_data:
-                return None
+        except ValueError as e:
+            raise PeeringDBTransientError(f"malformed /net response for ASN {asn}") from e
 
-            entry = net_data[0]
-            org_name = entry.get("name")
-            org_id = entry.get("org_id")
+        if not net_data:
+            return None
 
-            org_country = None
-            if org_id:
+        entry = net_data[0]
+        org_name = entry.get("name")
+        org_id = entry.get("org_id")
+
+        org_country = None
+        if org_id:
+            try:
                 org_response = await self._client.get(
                     f"{self._base_url}/org/{org_id}", headers=self._headers
                 )
@@ -61,8 +80,9 @@ class PeeringDBClient:
                     org_rows = org_response.json().get("data", [])
                     if org_rows:
                         org_country = org_rows[0].get("country") or None
+            except (httpx.HTTPError, ValueError):
+                logger.warning(
+                    "PeeringDB /org lookup failed for org %d, degrading to org_name only", org_id
+                )
 
-            return PeeringDBOrg(org_name=org_name, org_country=org_country)
-        except httpx.HTTPError:
-            logger.exception("PeeringDB lookup failed for ASN %d", asn)
-            return None
+        return PeeringDBOrg(org_name=org_name, org_country=org_country)
