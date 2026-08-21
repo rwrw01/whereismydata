@@ -22,16 +22,23 @@ interface HarFile {
 
 function extractHostname(url: string): string | null {
   try {
-    return new URL(url).hostname || null;
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.hostname || null;
   } catch {
     return null;
   }
 }
 
 function extractRefererHostname(entry: HarEntry): string | null {
-  const headers = entry.request?.headers ?? [];
-  const referer = headers.find((h) => h.name.toLowerCase() === "referer");
-  if (!referer) return null;
+  const headers = entry.request?.headers;
+  if (!Array.isArray(headers)) return null;
+  const referer = headers.find(
+    (h) => typeof h?.name === "string" && h.name.toLowerCase() === "referer",
+  );
+  if (!referer || typeof referer.value !== "string") return null;
   return extractHostname(referer.value);
 }
 
@@ -46,7 +53,7 @@ export function parseHar(rawText: string): ParsedHar {
   }
 
   const entries = data.log?.entries;
-  if (!entries || entries.length === 0) {
+  if (!Array.isArray(entries) || entries.length === 0) {
     throw new InvalidHarError("Geen requests gevonden in dit bestand.");
   }
 
@@ -55,18 +62,22 @@ export function parseHar(rawText: string): ParsedHar {
   const edges: HostnameEdge[] = [];
 
   for (const entry of entries) {
-    const host = extractHostname(entry.request?.url ?? "");
-    if (!host) continue;
+    try {
+      const host = extractHostname(entry.request?.url ?? "");
+      if (!host) continue;
 
-    counts.set(host, (counts.get(host) ?? 0) + 1);
+      counts.set(host, (counts.get(host) ?? 0) + 1);
 
-    const refererHost = extractRefererHostname(entry);
-    if (refererHost && refererHost !== host) {
-      const key = `${refererHost}->${host}`;
-      if (!edgeKeys.has(key)) {
-        edgeKeys.add(key);
-        edges.push({ parent: refererHost, child: host });
+      const refererHost = extractRefererHostname(entry);
+      if (refererHost && refererHost !== host) {
+        const key = `${refererHost}->${host}`;
+        if (!edgeKeys.has(key)) {
+          edgeKeys.add(key);
+          edges.push({ parent: refererHost, child: host });
+        }
       }
+    } catch {
+      // A single malformed entry must not abort parsing the whole file.
     }
   }
 
