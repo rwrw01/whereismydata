@@ -16,7 +16,9 @@ USER 1001
 ENV PORT=8080
 EXPOSE 8080
 
+# The probe reads PORT from the environment so it always targets the port
+# uvicorn actually binds to (PaaS platforms such as Fly.io and Render inject PORT).
 HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8080/healthz', timeout=3).raise_for_status()"
+    CMD python -c "import os, httpx; httpx.get('http://localhost:' + os.environ.get('PORT', '8080') + '/healthz', timeout=3).raise_for_status()"
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
