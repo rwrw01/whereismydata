@@ -1,0 +1,25 @@
+{
+  "name": "har-scan-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "EUPL-1.2",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "biome check .",
+    "e2e": "cross-env VITE_LOOKUP_API_URL=http://localhost:8080 npm run build && playwright test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.9",
+    "@playwright/test": "1.62.1",
+    "cross-env": "10.1.0",
+    "jsdom": "30.0.1",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  }
+}
