@@ -27,7 +27,7 @@ README van die repo.
 ```bash
 npm test              # unit tests (Vitest)
 npm run check          # lint + format (Biome)
-npm run e2e             # end-to-end (Playwright, start har-provider-lookup via Docker eerst — zie playwright.config.ts)
+npm run e2e             # end-to-end (Playwright, start har-provider-lookup automatisch via Docker Compose — vereist een sibling-checkout op ../har-provider-lookup)
 ```
 
 ## Bouwen
@@ -36,12 +36,11 @@ npm run e2e             # end-to-end (Playwright, start har-provider-lookup via 
 npm run build
 ```
 
-Output in `dist/`, gepubliceerd naar GitHub Pages via
-`.github/workflows/deploy-pages.yml` bij elke push naar `main`.
-
-Afhankelijk van de hostingkeuze moet `VITE_BASE` in die workflow worden gezet:
-laat hem ongezet bij een custom domain (base blijft `/`), en zet hem op
-`/<repo-naam>/` bij een GitHub Pages project-site (`<org>.github.io/<repo>`).
+Output in `dist/`. Deployment loopt via Vercel (auto-deploy bij elke push
+naar `main`, config in `vercel.json`). Zet `VITE_LOOKUP_API_URL` als
+environment variable in het Vercel-project-dashboard (Settings →
+Environment Variables) — niet in code, want de uiteindelijke URL van
+`har-provider-lookup` staat pas vast na de hostingkeuze daarvoor.
 
 ## License
 
