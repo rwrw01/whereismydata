@@ -14,7 +14,7 @@
     "e2e": "cross-env VITE_LOOKUP_API_URL=http://localhost:8080 npm run build && playwright test"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.9",
+    "@biomejs/biome": "2.5.10",
     "@playwright/test": "1.62.1",
     "@types/node": "26.2.0",
     "cross-env": "10.1.0",
